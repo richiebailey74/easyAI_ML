@@ -1,5 +1,7 @@
 # easyAI_ML
 
+There is NEVER free lunch, but we made a way to get reduced lunch...
+
 The entire purpose of this repository is for the supporting machine learning functionality of the EasyAI web application.
 
 EasyAI exists to solve a problem of a lack of access to machine learning in research. Many research teams could benefit from the power of deep learning models, but either lack the knowledge to create the models themselves, or lack the resources to pay for someone to build them models.
