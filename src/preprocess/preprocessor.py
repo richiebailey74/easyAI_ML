@@ -27,13 +27,13 @@ class Preprocessor:
 
     # method exists to create model training/validation/test data and serializable values to allow transforming of unseen data
     def fit_transform(
-        self, data
+        self, data, target_col
     ):
         data_c = data.copy()
 
 
         # split data
-        data_c, targets_unprocessed = self.splitData(data_c)
+        data_c, self.targets = self.splitData(data_c, target_col)
 
         # TODO: drop useless columns first, then store columns to be dropped later after imputing
         # will have a drop pre-imputing to assist imputing and post-imputing to assist model training
@@ -47,7 +47,7 @@ class Preprocessor:
         data_c = self.labelEncodeObjectCols(data_c)
         data_c = self.binarizeBoolCols(data_c)
         data_c = self.imputeMissingValues(data_c)
-        data_c = self.logScaleNumericalCols(data_c)
+        # data_c = self.logScaleNumericalCols(data_c)
         data_c = self.adjustNumericalOutliers(data_c)
         data_c = self.standardScaleNumericalCols(data_c)
         data_c = self.oneHotEncodeObjectCols(data_c)
@@ -57,14 +57,18 @@ class Preprocessor:
         return data_c
 
     # needs to make it such that the targets are always read in as the last column of the csv (and always of correct orientation)
-    def splitData(self, data, targ):
-        targets = data[targ]
-        loan_performance_data = pd.read_csv(
-            "datasets/delinquency/vontive-data-scientist-loan-performance.csv" # get rid of this shit
+    def splitData(self, data, target_col):
+        targ_col_names = (
+                list(data.filter(regex=target_col).columns)
         )
+
+        print('target vals',targ_col_names)
+
+        targets = data[targ_col_names]
+
         data = data.drop(
-            list(loan_performance_data.columns), axis=1
-        )  # don't add to dropped cols bc this is target data it's dropping
+            targ_col_names, axis=1
+        )
         return data, targets
 
     def dropColumns(self, data):
@@ -76,9 +80,14 @@ class Preprocessor:
         self.dropped_cols = (
             self.dropped_cols
             + list(data.filter(regex="Id").columns)
+            + list(data.filter(regex="id").columns)
+            + list(data.filter(regex="ID").columns)
             + list(data.filter(regex="City").columns)
+            + list(data.filter(regex="city").columns)
             + list(data.filter(regex="Date").columns)
+            + list(data.filter(regex="date").columns)
             + list(data.filter(regex="Address").columns)
+            + list(data.filter(regex="address").columns)
             + list(data.filter(regex="State").columns)
             + list(data.filter(regex="stage").columns)
         )
@@ -86,32 +95,11 @@ class Preprocessor:
         # TODO: could introduce functionality to dynamically drop categorical columns that have more than a certain number of labels
         return data
 
-    def processTargets(self, targs):
-        targs = (targs > 0).astype(int)
-        return np.array(targs)
-
     def getColumns(self, data):
         self.object_cols = data.select_dtypes(include="object").columns
         self.bool_cols = data.select_dtypes(include="bool").columns
         self.int_cols = data.select_dtypes(include="int64").columns
         self.float_cols = data.select_dtypes(include="float").columns
-
-    def normalizeProductCodes(self, prod_code):
-        # these "closest" mappings may be incorrect or can be improved, but are needed to rid of "deprecated"
-        if prod_code == "DEPRECATED SFR Value Add Refinance with Cash Out":
-            return "SFR Rental Fixed Rate Refinance with Cash Out"
-        elif prod_code == "DEPRECATED SFR Value Add Rate-Term Refinance":
-            return "SFR Rental Fixed Rate Rate-Term Refinance"
-        elif prod_code == "DEPRECATED SFR Stable Asset Refinance":
-            return "SFR Rental Fixed Rate Rate-Term Refinance"
-        elif prod_code == "DEPRECATED SFR Rental Hybrid Interest-Only ARM":
-            return "SFR Rental Fixed Rate Rate-Term Refinance"
-        else:
-            return prod_code
-
-    def transformProductCode(self, data):
-        data["productCode"] = data["productCode"].map(self.normalizeProductCodes)
-        return data
 
     def labelEncodeObjectCols(self, data):
         # Int64 is nullable so that we can preserve the NaNs so we can still label encode then inpute later
@@ -164,6 +152,10 @@ class Preprocessor:
             data[i][data[i] == np.NINF] = nmax
             data[i][np.isnan(data[i])] = nmin
             self.logScaleExtremes[i] = (nmax, nmin)
+
+        if data.isna().sum().sum() != 0:
+            raise Exception("NaNs exist after log scaling, further investigation needed")
+
         return data
 
     def adjustNumericalOutliers(self, data, z_up=2.5, z_low=-2.5):
@@ -213,21 +205,10 @@ class Preprocessor:
         )  # NOTE: would it be smarter to track the necessary columns (when fittinh) instead of
         # trying to keep track of all of the dropped columns and just get the ones we need?
 
-        if vontive_score == "delinquency":
-            data_c = self.transformProductCode(data_c)  # need not rewrite
-
-        elif vontive_score == "to_close":
-            data_c = self.joinOnDate_toClose(data_c)
-
-        else:
-            raise Exception(
-                "Please enter a valid vontive score type. (e.g. 'delinquency', 'to_close')"
-            )
-
         data_c = self.labelEncode_t(data_c)
         data_c = self.binarizeBoolCols(data_c)  # need not rewrite
         data_c = self.imputeMissing_t(data_c)
-        data_c = self.logScale_t(data_c)
+        # data_c = self.logScale_t(data_c)
         data_c = self.adjustOutliers_t(data_c)
         data_c = self.standardScale_t(data_c)
         data_c = self.oneHotEncode_t(data_c)

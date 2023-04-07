@@ -11,14 +11,14 @@ import pandas as pd
 
 
 # needs to change to data being passed as a parameter instead of reading a csv
-def create_workspace_object(data_name, nn_type):
+def create_workspace_object(data, nn_type, target_col):
 
     # read in data
-    data = pd.read_csv(f'data/{data_name}.csv') # change to pass as parameter
+    # data = pd.read_csv(f'src/data/{data_name}.csv') # change to pass as parameter
 
     # preprocess data method here
     preprocessor = Preprocessor()
-    preprocessor.fit_transform(data)
+    preprocessor.fit_transform(data, target_col)
 
     # get dataset splits
     dataset = train_val_test_split(preprocessor.samples, preprocessor.targets, nn_type)
@@ -31,14 +31,13 @@ def create_workspace_object(data_name, nn_type):
 
     # train model and save
     model_fitted = train_model(model, dataset)
-    model_fitted.save(f'models/{data_name}_model') # change to saving in S3 or mongo
+    # model_fitted.save(f'models/{data_name}_model') # change to saving in S3 or mongo
 
     # model predictions and save them
     preds = predict_model(model_fitted, dataset)
     if nn_type == 'classification':
         preds = labelize_softmax(preds)
-    pd.DataFrame(preds).to_csv(
-        f'predictions/{data_name}_predictions.csv') # change to saving in S3 or mongo
+    # pd.DataFrame(preds).to_csv(f'predictions/{data_name}_predictions.csv') # change to saving in S3 or mongo
 
     # eval model
     performance_metric = eval_model(preds, dataset, nn_type)
@@ -48,3 +47,7 @@ def create_workspace_object(data_name, nn_type):
 
     # return object (or do whatever needs to be done)
     return workspace_object
+
+
+data = pd.read_csv('data/housing_data.csv')
+create_workspace_object(data, 'regression')

@@ -14,11 +14,11 @@ def generate_nn_params(dataset, nn_type):
             in_s = round(in_s*.8)
 
         loss = 'categorical_crossentropy'
-        metric = 'categorical_accuracy'
+        metric = 'balanced_accuracy'
 
     elif nn_type == 'regression':
         output_shape = 1
-        output_activation = 'linear'
+        output_activation = 'relu'
         hidden_widths = []
         in_s = input_shape
         while in_s > output_shape + 2:
@@ -26,9 +26,10 @@ def generate_nn_params(dataset, nn_type):
             in_s = round(in_s*.8)
 
         loss = 'mse'
-        metric = 'accuracy'
+        metric = 'mse'
 
     else:
         raise Exception('Not a currently valid nn_type')
 
+    print("nn parameters: ", (input_shape, hidden_widths, output_shape, output_activation, loss, metric))
     return (input_shape, hidden_widths, output_shape, output_activation, loss, metric)
