@@ -49,5 +49,5 @@ def create_workspace_object(data, nn_type, target_col):
     return workspace_object
 
 
-data = pd.read_csv('data/housing_data.csv')
-create_workspace_object(data, 'regression')
+data = pd.read_csv('data/Life Expectancy Data.csv')
+create_workspace_object(data, 'regression', 'target')

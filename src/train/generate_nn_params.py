@@ -11,7 +11,7 @@ def generate_nn_params(dataset, nn_type):
         in_s = input_shape
         while in_s > output_shape + 2:
             hidden_widths.append(in_s)
-            in_s = round(in_s*.8)
+            in_s = round(in_s*.75)
 
         loss = 'categorical_crossentropy'
         metric = 'balanced_accuracy'
@@ -23,7 +23,7 @@ def generate_nn_params(dataset, nn_type):
         in_s = input_shape
         while in_s > output_shape + 2:
             hidden_widths.append(in_s)
-            in_s = round(in_s*.8)
+            in_s = round(in_s*.75)
 
         loss = 'mse'
         metric = 'mse'

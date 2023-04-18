@@ -4,6 +4,8 @@ import tensorflow as tf
 from tensorflow import keras
 
 
-def predict_model(model, X_test): # might need different params (for accessing preprocessor and model)
+def predict_model(model, preprocessor, X_test): # might need different params (for accessing preprocessor and model)
 
-    return model.predict(X_test)
+    data_t = preprocessor.transform(X_test)
+
+    return model.predict(data_t)

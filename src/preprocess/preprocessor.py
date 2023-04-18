@@ -31,6 +31,7 @@ class Preprocessor:
     ):
         data_c = data.copy()
 
+        data_c = data_c[data_c[target_col].notna()]
 
         # split data
         data_c, self.targets = self.splitData(data_c, target_col)
@@ -146,12 +147,10 @@ class Preprocessor:
         # log scale exponential/polynomically distributed attributes (all numerical columns)
         # done before scaling so the resulting dataset is standardized properly
         for i in list(self.int_cols) + list(self.float_cols):
-            data[i] = np.log(np.array(data[i]))
-            nmax = np.nanmax(data[i])
-            nmin = np.nanmin(data[i])
-            data[i][data[i] == np.NINF] = nmax
-            data[i][np.isnan(data[i])] = nmin
-            self.logScaleExtremes[i] = (nmax, nmin)
+            d = np.array(data[i]).copy()
+            data[i] = np.where(d <= 0, d, np.log(d))
+            d = np.array(data[i]).copy()
+            data[i] = np.where(d >= 0, d, -1 * np.log(-1 * d))
 
         if data.isna().sum().sum() != 0:
             raise Exception("NaNs exist after log scaling, further investigation needed")
@@ -196,7 +195,7 @@ class Preprocessor:
         return data_arr
 
     # method exists to transform a given data point without a give label (effectively, unseen data of type already fit)
-    def transform(self, data, vontive_score="delinquency"):
+    def transform(self, data):
         for i in data.columns:
             print("col name", i, "col value", data[i][0])
         data_c = data.copy()
@@ -252,9 +251,10 @@ class Preprocessor:
 
     def logScale_t(self, data):
         for i in list(self.int_cols) + list(self.float_cols):
-            data[i] = np.log(np.array(data[i]))
-            data[i][data[i] == np.NINF] = self.logScaleExtremes[i][0]
-            data[i][np.isnan(data[i])] = self.logScaleExtremes[i][1]
+            d = np.array(data[i]).copy()
+            data[i] = np.where(d <= 0, d, np.log(d))
+            d = np.array(data[i]).copy()
+            data[i] = np.where(d >= 0, d, -1 * np.log(-1 * d))
         return data
 
     def adjustOutliers_t(self, data):
